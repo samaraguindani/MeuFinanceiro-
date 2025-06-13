@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ImageView;
+import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,8 +21,10 @@ import com.bumptech.glide.Glide;
 import com.example.meufinanceiro.R;
 import com.example.meufinanceiro.utils.UsuarioFirebase;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.*;
 
@@ -30,6 +33,9 @@ public class MainActivity extends AppCompatActivity {
     private ImageView avatar;
     private FloatingActionButton fabAdd;
     private RecyclerView recycler;
+
+    private FirebaseFirestore firestore;
+    private FirebaseUser usuario;
 
     @Override
     protected void onCreate(@Nullable Bundle s) {
@@ -40,36 +46,45 @@ public class MainActivity extends AppCompatActivity {
         fabAdd  = findViewById(R.id.fabAdd);
         recycler= findViewById(R.id.recycler_months);
 
-        // Verifica se o usuário está logado, senão volta pro login
-        verificarUsuarioLogado();
+        firestore = FirebaseFirestore.getInstance();
+        usuario = FirebaseAuth.getInstance().getCurrentUser();
 
-        // carrega avatar
+        verificarUsuarioLogado();
         carregarAvatar();
 
-        // configura RecyclerView
         recycler.setLayoutManager(new LinearLayoutManager(this));
 
-        // prepara dados de exemplo
-        List<MonthSummary> months = Arrays.asList(
-                new MonthSummary("June 2025", "+R$ 1,500", true),
-                new MonthSummary("May 2025",  "+R$ 1,200", false),
-                new MonthSummary("April 2025", "+R$ 1,800", false)
-        );
+        fabAdd.setOnClickListener(v -> abrirDialogoNovoMes());
 
-        // seta adapter
-        recycler.setAdapter(new MonthAdapter(months));
+        carregarMesesDoFirestore();
 
-        fabAdd.setOnClickListener(v ->
-                Toast.makeText(this, "Adicionar item", Toast.LENGTH_SHORT).show()
-        );
-
-        // clique no avatar para logout
         avatar.setOnClickListener(v -> mostrarDialogoLogout());
+
+        configurarBottomNavigation();
+    }
+
+    private void configurarBottomNavigation() {
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+
+        bottomNav.setOnNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_home) {
+                // já está na Home
+                return true;
+            }
+            else if (id == R.id.nav_settings) {
+                startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+                return true;
+            }
+
+            return false;
+        });
+
     }
 
     private void verificarUsuarioLogado() {
-        FirebaseUser usuarioAtual = FirebaseAuth.getInstance().getCurrentUser();
-        if (usuarioAtual == null) {
+        if (usuario == null) {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
         }
@@ -89,6 +104,72 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void abrirDialogoNovoMes() {
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View view = inflater.inflate(R.layout.dialog_novo_mes, null);
+        EditText editNomeMes = view.findViewById(R.id.editNomeMes);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Adicionar Mês")
+                .setView(view)
+                .setPositiveButton("Salvar", (dialog, which) -> {
+                    String nomeMes = editNomeMes.getText().toString().trim();
+                    if (!nomeMes.isEmpty()) {
+                        salvarMesNoFirestore(nomeMes);
+                    } else {
+                        Toast.makeText(this, "Digite o nome do mês", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    private void salvarMesNoFirestore(String nomeMes) {
+        if (usuario == null) {
+            Toast.makeText(this, "Usuário não logado!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Map<String, Object> dadosMes = new HashMap<>();
+        dadosMes.put("name", nomeMes);
+        dadosMes.put("totalBalance", 0.0);
+        dadosMes.put("isCurrent", false);
+
+        firestore.collection("users")
+                .document(usuario.getUid())
+                .collection("months")
+                .add(dadosMes)
+                .addOnSuccessListener(documentReference -> {
+                    Toast.makeText(this, "Mês adicionado!", Toast.LENGTH_SHORT).show();
+                    carregarMesesDoFirestore();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Erro ao adicionar mês.", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void carregarMesesDoFirestore() {
+        if (usuario == null) return;
+
+        firestore.collection("users")
+                .document(usuario.getUid())
+                .collection("months")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<MonthSummary> months = new ArrayList<>();
+                    for (var doc : queryDocumentSnapshots.getDocuments()) {
+                        String name = doc.getString("name");
+                        Double balance = doc.getDouble("totalBalance");
+                        Boolean isCurrent = doc.getBoolean("isCurrent");
+                        months.add(new MonthSummary(name, "+R$ " + (balance != null ? balance.intValue() : 0), isCurrent != null && isCurrent));
+                    }
+                    recycler.setAdapter(new MonthAdapter(months));
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Erro ao carregar meses", Toast.LENGTH_SHORT).show();
+                });
+    }
+
     private void mostrarDialogoLogout() {
         new AlertDialog.Builder(this)
                 .setTitle("Sair")
@@ -105,7 +186,6 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    // ——————— Data class ———————
     static class MonthSummary {
         String name, balance;
         boolean isCurrent;
@@ -116,7 +196,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // ——————— Adapter ———————
     class MonthAdapter extends RecyclerView.Adapter<MonthAdapter.MonthViewHolder> {
         private final List<MonthSummary> months;
         MonthAdapter(List<MonthSummary> months) { this.months = months; }
