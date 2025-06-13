@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "638309492531",
+    "project_id": "meufinanceiro-fcbdb",
+    "storage_bucket": "meufinanceiro-fcbdb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:638309492531:android:1162f0b0f98b69c4790046",
+        "android_client_info": {
+          "package_name": "com.example.meufinanceiro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "638309492531-ipi0gqir936uqvqke9jc9n3t7dnft3e7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9m_Cs3oTrjZ8LQypRJ_7NR099Yu5WR_Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "638309492531-ipi0gqir936uqvqke9jc9n3t7dnft3e7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

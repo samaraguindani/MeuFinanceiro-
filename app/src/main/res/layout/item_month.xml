@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@android:color/white"
+    android:layout_marginBottom="8dp">
+
+    <!-- Somente visível se for o mês atual -->
+    <TextView
+        android:id="@+id/tvCurrent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Current Month"
+        android:textSize="12sp"
+        android:textColor="#757575"
+        android:visibility="gone"/>
+
+    <!-- Nome do mês -->
+    <TextView
+        android:id="@+id/tvMonthName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="June 2025"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#000000"
+        android:layout_marginTop="2dp"/>
+
+    <!-- Saldo -->
+    <TextView
+        android:id="@+id/tvBalance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Balance: +R$1,500"
+        android:textSize="14sp"
+        android:textColor="#9b12c4"
+        android:layout_marginTop="2dp"/>
+</LinearLayout>

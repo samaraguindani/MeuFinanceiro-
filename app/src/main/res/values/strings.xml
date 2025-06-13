@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MeuFinanceiro+</string>
+    <string name="default_web_client_id">638309492531-ipi0gqir936uqvqke9jc9n3t7dnft3e7.apps.googleusercontent.com</string>
+    <string name="add_item">Adicionar</string>
+</resources>
