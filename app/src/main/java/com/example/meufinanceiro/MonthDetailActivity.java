@@ -7,8 +7,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
-import com.example.meufinanceiro.AddTransactionDialogFragment;
-import com.example.meufinanceiro.DetailPagerAdapter;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -17,12 +15,15 @@ import com.google.android.material.tabs.TabLayoutMediator;
 
 public class MonthDetailActivity extends AppCompatActivity {
 
-    private String monthName = "Junho 2025"; // Definido fixo por enquanto
+    private String monthName;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_month_detail);
+
+        // Agora o nome do mês vem dinamicamente da Intent:
+        monthName = getIntent().getStringExtra("EXTRA_MONTH_NAME");
 
         // Toolbar SEM seta de back
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
@@ -54,22 +55,19 @@ public class MonthDetailActivity extends AppCompatActivity {
     private void configurarBottomNavigation() {
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
 
-        // CORREÇÃO PRINCIPAL: marcar Transactions como ativo
+        // Marca o ícone Transactions como ativo
         bottomNav.setSelectedItemId(R.id.nav_transactions);
 
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
             if (id == R.id.nav_transactions) {
-                // já está na tela atual
                 return true;
-            }
-            else if (id == R.id.nav_home) {
+            } else if (id == R.id.nav_home) {
                 startActivity(new Intent(MonthDetailActivity.this, MainActivity.class));
-                finish(); // fecha para não empilhar várias activities
+                finish();
                 return true;
-            }
-            else if (id == R.id.nav_settings) {
+            } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(MonthDetailActivity.this, SettingsActivity.class));
                 return true;
             }
