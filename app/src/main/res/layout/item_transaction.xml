@@ -6,27 +6,18 @@
     android:layout_height="wrap_content">
 
     <TextView
-        android:id="@+id/txtDescricao"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Descrição"
-        android:textStyle="bold" />
-
-    <TextView
         android:id="@+id/txtValor"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="R$ 0.00" />
+        android:text="R$ 0.00"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#000000"/>
 
     <TextView
-        android:id="@+id/txtCategoria"
+        android:id="@+id/txtData"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Categoria" />
-
-    <TextView
-        android:id="@+id/txtTipo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Tipo" />
+        android:text="01/06/2025"
+        android:textColor="#777777"/>
 </LinearLayout>

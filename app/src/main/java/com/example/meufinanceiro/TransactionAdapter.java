@@ -8,14 +8,23 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.meufinanceiro.R;
+import com.example.meufinanceiro.Transaction;
+
 import java.util.List;
 
 public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.ViewHolder> {
 
     private List<Transaction> lista;
+    private OnItemClickListener listener;
 
-    public TransactionAdapter(List<Transaction> lista) {
+    public interface OnItemClickListener {
+        void onItemClick(Transaction transaction);
+    }
+
+    public TransactionAdapter(List<Transaction> lista, OnItemClickListener listener) {
         this.lista = lista;
+        this.listener = listener;
     }
 
     @NonNull
@@ -28,10 +37,9 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Transaction t = lista.get(position);
-        holder.txtDescricao.setText(t.getDescricao());
         holder.txtValor.setText(String.format("R$ %.2f", t.getValor()));
-        holder.txtCategoria.setText(t.getCategoria());
-        holder.txtTipo.setText(t.getTipo());
+        holder.txtData.setText(t.getData());
+        holder.itemView.setOnClickListener(v -> listener.onItemClick(t));
     }
 
     @Override
@@ -40,14 +48,12 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView txtDescricao, txtValor, txtCategoria, txtTipo;
+        TextView txtValor, txtData;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            txtDescricao = itemView.findViewById(R.id.txtDescricao);
             txtValor = itemView.findViewById(R.id.txtValor);
-            txtCategoria = itemView.findViewById(R.id.txtCategoria);
-            txtTipo = itemView.findViewById(R.id.txtTipo);
+            txtData = itemView.findViewById(R.id.txtData);
         }
     }
 }

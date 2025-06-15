@@ -1,18 +1,20 @@
-package com.example.meufinanceiro.fragment;
+package com.example.meufinanceiro;
 
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.meufinanceiro.R;
 import com.example.meufinanceiro.TransactionAdapter;
+import com.example.meufinanceiro.EditTransactionDialogFragment;
 import com.example.meufinanceiro.Transaction;
 import com.google.firebase.firestore.*;
 
@@ -27,10 +29,9 @@ public class HistoryFragment extends Fragment {
     private RecyclerView recyclerView;
     private TransactionAdapter adapter;
     private List<Transaction> transactionList = new ArrayList<>();
+    private FirebaseFirestore firestore;
 
-    public HistoryFragment() {
-        // Required empty public constructor
-    }
+    public HistoryFragment() {}
 
     public static HistoryFragment newInstance(String monthName) {
         HistoryFragment fragment = new HistoryFragment();
@@ -46,6 +47,7 @@ public class HistoryFragment extends Fragment {
         if (getArguments() != null) {
             monthName = getArguments().getString(ARG_MONTH_NAME);
         }
+        firestore = FirebaseFirestore.getInstance();
     }
 
     @Nullable
@@ -55,7 +57,8 @@ public class HistoryFragment extends Fragment {
 
         recyclerView = view.findViewById(R.id.recyclerHistory);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new TransactionAdapter(transactionList);
+
+        adapter = new TransactionAdapter(transactionList, this::editarTransacao);
         recyclerView.setAdapter(adapter);
 
         carregarTransacoes();
@@ -64,20 +67,33 @@ public class HistoryFragment extends Fragment {
     }
 
     private void carregarTransacoes() {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("transactions")
+        firestore.collection("transactions")
                 .document(monthName)
                 .collection("items")
                 .addSnapshotListener((value, error) -> {
-                    if (error != null) {
-                        return;
+                    if (value != null) {
+                        transactionList.clear();
+                        for (DocumentSnapshot doc : value.getDocuments()) {
+                            Transaction t = doc.toObject(Transaction.class);
+                            transactionList.add(t);
+                        }
+                        adapter.notifyDataSetChanged();
                     }
-                    transactionList.clear();
-                    for (DocumentSnapshot doc : value.getDocuments()) {
-                        Transaction transaction = doc.toObject(Transaction.class);
-                        transactionList.add(transaction);
-                    }
-                    adapter.notifyDataSetChanged();
                 });
+    }
+
+
+
+    private void excluirTransacao(Transaction transaction) {
+        firestore.collection("transactions")
+                .document(monthName)
+                .collection("items")
+                .document(transaction.getId())
+                .delete();
+    }
+
+    private void editarTransacao(Transaction transaction) {
+        EditTransactionDialogFragment dialog = new EditTransactionDialogFragment(monthName, transaction);
+        dialog.show(getParentFragmentManager(), "EditarTransacao");
     }
 }
