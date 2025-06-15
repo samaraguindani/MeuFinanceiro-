@@ -1,66 +1,79 @@
 package com.example.meufinanceiro;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.view.MenuItem;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
-import com.example.meufinanceiro.DetailPagerAdapter;
 import com.example.meufinanceiro.AddTransactionDialogFragment;
+import com.example.meufinanceiro.DetailPagerAdapter;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 public class MonthDetailActivity extends AppCompatActivity {
 
-    public static final String EXTRA_MONTH_NAME = "EXTRA_MONTH_NAME";
-
-    private String monthName;
+    private String monthName = "Junho 2025"; // Definido fixo por enquanto
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_month_detail);
 
-        // 1) Toolbar com back arrow
+        // Toolbar SEM seta de back
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(monthName);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        }
 
-        // 2) Título vindo do Intent
-        monthName = getIntent().getStringExtra(EXTRA_MONTH_NAME);
-        getSupportActionBar().setTitle(monthName);
-
-        // 3) Configura ViewPager + Tabs
+        // ViewPager + Tabs
         ViewPager2 pager = findViewById(R.id.viewPager);
         pager.setAdapter(new DetailPagerAdapter(this, monthName));
 
         TabLayout tabs = findViewById(R.id.tabLayout);
-        new TabLayoutMediator(tabs, pager,
-                (tab, position) -> {
-                    tab.setText(position == 0 ? "Overview" : "History");
-                }
-        ).attach();
+        new TabLayoutMediator(tabs, pager, (tab, position) -> {
+            tab.setText(position == 0 ? "Overview" : "History");
+        }).attach();
 
-        // 4) FloatingActionButton funcional
+        // FloatingActionButton para adicionar transação
         FloatingActionButton fabAddTransaction = findViewById(R.id.fabAddTransaction);
         fabAddTransaction.setOnClickListener(v -> {
-            // Aqui abrimos o Dialog de adicionar transação
             AddTransactionDialogFragment dialog = new AddTransactionDialogFragment(monthName);
             dialog.show(getSupportFragmentManager(), "AddTransaction");
         });
+
+        configurarBottomNavigation();
     }
 
-    // seta ação do back na toolbar
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            finish();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
+    private void configurarBottomNavigation() {
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+
+        // CORREÇÃO PRINCIPAL: marcar Transactions como ativo
+        bottomNav.setSelectedItemId(R.id.nav_transactions);
+
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_transactions) {
+                // já está na tela atual
+                return true;
+            }
+            else if (id == R.id.nav_home) {
+                startActivity(new Intent(MonthDetailActivity.this, MainActivity.class));
+                finish(); // fecha para não empilhar várias activities
+                return true;
+            }
+            else if (id == R.id.nav_settings) {
+                startActivity(new Intent(MonthDetailActivity.this, SettingsActivity.class));
+                return true;
+            }
+            return false;
+        });
     }
 }

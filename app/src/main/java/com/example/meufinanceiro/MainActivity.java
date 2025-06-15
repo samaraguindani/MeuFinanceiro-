@@ -73,6 +73,10 @@ public class MainActivity extends AppCompatActivity {
                 // já está na Home
                 return true;
             }
+            else if (id == R.id.nav_transactions) {
+                startActivity(new Intent(MainActivity.this, MonthDetailActivity.class)); // <-- Nossa nova tela de movimentação
+                return true;
+            }
             else if (id == R.id.nav_settings) {
                 startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                 return true;

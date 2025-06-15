@@ -1,5 +1,6 @@
 package com.example.meufinanceiro;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -55,6 +57,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         carregarCategorias();
         carregarFormasPagamento();
+        configurarBottomNavigation();
     }
 
     // Adicionar nova categoria
@@ -233,5 +236,31 @@ public class SettingsActivity extends AppCompatActivity {
                     Toast.makeText(this, "Forma de pagamento excluída!", Toast.LENGTH_SHORT).show();
                     carregarFormasPagamento();
                 });
+    }
+
+    private void configurarBottomNavigation() {
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+
+        bottomNav.setSelectedItemId(R.id.nav_settings);
+
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_settings) {
+                // já está na tela atual
+                return true;
+            }
+            else if (id == R.id.nav_home) {
+                startActivity(new Intent(SettingsActivity.this, MainActivity.class));
+                finish(); // fecha para não empilhar várias activities
+                return true;
+            }
+            else if (id == R.id.nav_transactions) {
+                startActivity(new Intent(SettingsActivity.this, MonthDetailActivity.class));
+                return true;
+            }
+
+            return false;
+        });
     }
 }

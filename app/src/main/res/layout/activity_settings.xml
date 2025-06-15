@@ -1,54 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="24dp">
+    android:layout_height="match_parent">
 
-    <LinearLayout
+    <!-- Conteúdo principal com Scroll -->
+    <ScrollView
+        android:id="@+id/scrollView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_navigation"
+        android:padding="24dp">
 
-        <!-- Categorias -->
-        <Button
-            android:id="@+id/btnAddCategory"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Adicionar Categoria" />
+            android:orientation="vertical">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Categorias:"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp" />
+            <!-- Categorias -->
+            <Button
+                android:id="@+id/btnAddCategory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Adicionar Categoria" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerCategories"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:overScrollMode="never" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Categorias:"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp" />
 
-        <!-- Formas de Pagamento -->
-        <Button
-            android:id="@+id/btnAddPaymentMethod"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Adicionar Forma de Pagamento"
-            android:layout_marginTop="24dp" />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerCategories"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:overScrollMode="never" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Formas de Pagamento:"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp" />
+            <!-- Formas de Pagamento -->
+            <Button
+                android:id="@+id/btnAddPaymentMethod"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Adicionar Forma de Pagamento"
+                android:layout_marginTop="24dp" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerPayments"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:overScrollMode="never" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Formas de Pagamento:"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp" />
 
-    </LinearLayout>
-</ScrollView>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerPayments"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:overScrollMode="never" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- BottomNavigation fixo no rodapé -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_alignParentBottom="true"
+        app:menu="@menu/bottom_nav_menu"
+        app:itemIconTint="@null"
+        app:itemTextColor="@color/selector_nav_item_color"
+        app:itemIconSize="32dp"
+        android:background="@android:color/white"/>
+</RelativeLayout>
