@@ -20,7 +20,7 @@ public class DetailPagerAdapter extends FragmentStateAdapter {
         if (position == 0) {
             return OverviewFragment.newInstance(monthName);
         } else {
-            return HistoryFragment.newInstance(monthName);
+            return com.example.meufinanceiro.fragment.HistoryFragment.newInstance(monthName);
         }
     }
 

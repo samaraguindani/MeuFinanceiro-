@@ -2,16 +2,23 @@ package com.example.meufinanceiro;
 
 import android.os.Bundle;
 import android.view.MenuItem;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
+
+import com.example.meufinanceiro.DetailPagerAdapter;
+import com.example.meufinanceiro.AddTransactionDialogFragment;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
 public class MonthDetailActivity extends AppCompatActivity {
 
     public static final String EXTRA_MONTH_NAME = "EXTRA_MONTH_NAME";
+
+    private String monthName;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -24,7 +31,7 @@ public class MonthDetailActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         // 2) Título vindo do Intent
-        String monthName = getIntent().getStringExtra(EXTRA_MONTH_NAME);
+        monthName = getIntent().getStringExtra(EXTRA_MONTH_NAME);
         getSupportActionBar().setTitle(monthName);
 
         // 3) Configura ViewPager + Tabs
@@ -37,6 +44,14 @@ public class MonthDetailActivity extends AppCompatActivity {
                     tab.setText(position == 0 ? "Overview" : "History");
                 }
         ).attach();
+
+        // 4) FloatingActionButton funcional
+        FloatingActionButton fabAddTransaction = findViewById(R.id.fabAddTransaction);
+        fabAddTransaction.setOnClickListener(v -> {
+            // Aqui abrimos o Dialog de adicionar transação
+            AddTransactionDialogFragment dialog = new AddTransactionDialogFragment(monthName);
+            dialog.show(getSupportFragmentManager(), "AddTransaction");
+        });
     }
 
     // seta ação do back na toolbar
