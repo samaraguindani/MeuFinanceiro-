@@ -1,5 +1,6 @@
 package com.example.meufinanceiro;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,10 +38,19 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Transaction t = lista.get(position);
-        holder.txtValor.setText(String.format("R$ %.2f", t.getValor()));
+
+        if (t.getTipo().equalsIgnoreCase("Gasto")) {
+            holder.txtValor.setText(String.format("R$ - %.2f", t.getValor()));
+            holder.txtValor.setTextColor(Color.parseColor("#E53935")); // vermelho
+        } else {
+            holder.txtValor.setText(String.format("R$ %.2f", t.getValor()));
+            holder.txtValor.setTextColor(Color.parseColor("#000000")); // preto
+        }
+
         holder.txtData.setText(t.getData());
         holder.itemView.setOnClickListener(v -> listener.onItemClick(t));
     }
+
 
     @Override
     public int getItemCount() {

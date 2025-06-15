@@ -18,8 +18,12 @@ import com.example.meufinanceiro.EditTransactionDialogFragment;
 import com.example.meufinanceiro.Transaction;
 import com.google.firebase.firestore.*;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class HistoryFragment extends Fragment {
 
@@ -77,10 +81,24 @@ public class HistoryFragment extends Fragment {
                             Transaction t = doc.toObject(Transaction.class);
                             transactionList.add(t);
                         }
+
+                        // Ordenação manual após carregar
+                        Collections.sort(transactionList, (t1, t2) -> {
+                            try {
+                                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                                Date data1 = sdf.parse(t1.getData());
+                                Date data2 = sdf.parse(t2.getData());
+                                return data2.compareTo(data1); // ordem decrescente
+                            } catch (Exception e) {
+                                return 0; // fallback se não conseguir converter
+                            }
+                        });
+
                         adapter.notifyDataSetChanged();
                     }
                 });
     }
+
 
 
 
