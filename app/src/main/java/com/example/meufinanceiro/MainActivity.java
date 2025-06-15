@@ -1,24 +1,21 @@
 package com.example.meufinanceiro;
 
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Spinner;
-import android.widget.TextView;
-import android.widget.Toast;
-import android.widget.ImageView;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.Spinner;
+import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.*;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.meufinanceiro.utils.UsuarioFirebase;
@@ -28,14 +25,16 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ImageView avatar;
     private FloatingActionButton fabAdd;
     private RecyclerView recycler;
-
     private FirebaseFirestore firestore;
     private FirebaseUser usuario;
 
@@ -44,23 +43,19 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(s);
         setContentView(R.layout.activity_main);
 
-        avatar  = findViewById(R.id.avatar);
-        fabAdd  = findViewById(R.id.fabAdd);
-        recycler= findViewById(R.id.recycler_months);
-
         firestore = FirebaseFirestore.getInstance();
         usuario = FirebaseAuth.getInstance().getCurrentUser();
 
         verificarUsuarioLogado();
         carregarAvatar();
 
+        recycler = findViewById(R.id.recycler_months);
         recycler.setLayoutManager(new LinearLayoutManager(this));
 
+        fabAdd = findViewById(R.id.fabAdd);
         fabAdd.setOnClickListener(v -> abrirDialogoNovoMes());
 
         carregarMesesDoFirestore();
-
-        avatar.setOnClickListener(v -> mostrarDialogoLogout());
 
         configurarBottomNavigation();
     }
@@ -72,14 +67,40 @@ public class MainActivity extends AppCompatActivity {
             if (id == R.id.nav_home) {
                 return true;
             } else if (id == R.id.nav_transactions) {
-                startActivity(new Intent(MainActivity.this, MonthDetailActivity.class));
-                return true;
+                    carregarUltimoMesECriarIntent();
+                    return true;
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                 return true;
             }
             return false;
         });
+    }
+
+    private void carregarUltimoMesECriarIntent() {
+        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (usuario == null) return;
+
+        firestore.collection("users")
+                .document(usuario.getUid())
+                .collection("months")
+                .orderBy("name", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        String nomeUltimoMes = queryDocumentSnapshots.getDocuments().get(0).getString("name");
+
+                        Intent intent = new Intent(MainActivity.this, MonthDetailActivity.class);
+                        intent.putExtra("EXTRA_MONTH_NAME", nomeUltimoMes);
+                        startActivity(intent);
+                    } else {
+                        Toast.makeText(MainActivity.this, "Nenhum mês cadastrado ainda.", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(MainActivity.this, "Erro ao buscar meses.", Toast.LENGTH_SHORT).show());
     }
 
     private void verificarUsuarioLogado() {
@@ -91,10 +112,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void carregarAvatar() {
         Uri u = UsuarioFirebase.getFotoUsuario();
+        ImageView avatarImage = findViewById(R.id.avatar);
         if (u != null) {
-            Glide.with(this).load(u).circleCrop().placeholder(R.drawable.default_avatar).error(R.drawable.default_avatar).into(avatar);
+            Glide.with(this)
+                    .load(u)
+                    .circleCrop()
+                    .placeholder(R.drawable.default_avatar)
+                    .error(R.drawable.default_avatar)
+                    .into(avatarImage);
         } else {
-            avatar.setImageResource(R.drawable.default_avatar);
+        avatarImage.setImageResource(R.drawable.default_avatar);
         }
     }
 
@@ -106,25 +133,21 @@ public class MainActivity extends AppCompatActivity {
         Spinner spinnerAno = view.findViewById(R.id.spinnerAno);
         EditText editDescricao = view.findViewById(R.id.editDescricao);
 
-        String[] meses = { "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-                "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro" };
+        String[] meses = {"Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"};
         spinnerMes.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, meses));
 
         int anoAtual = Calendar.getInstance().get(Calendar.YEAR);
         List<String> anos = new ArrayList<>();
-        for (int i = 0; i <= 10; i++) {
-            anos.add(String.valueOf(anoAtual - i));
-        }
+        for (int i = 0; i <= 10; i++) anos.add(String.valueOf(anoAtual - i));
         spinnerAno.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, anos));
 
         new AlertDialog.Builder(this)
                 .setTitle("Adicionar Mês")
                 .setView(view)
                 .setPositiveButton("Salvar", (dialog, which) -> {
-                    String mesSelecionado = spinnerMes.getSelectedItem().toString();
-                    String anoSelecionado = spinnerAno.getSelectedItem().toString();
+                    String nomeMes = spinnerMes.getSelectedItem() + " " + spinnerAno.getSelectedItem();
                     String descricao = editDescricao.getText().toString().trim();
-                    String nomeMes = mesSelecionado + " " + anoSelecionado;
                     salvarMesNoFirestore(nomeMes, descricao);
                 })
                 .setNegativeButton("Cancelar", null)
@@ -132,10 +155,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void salvarMesNoFirestore(String nomeMes, String descricao) {
-        if (usuario == null) {
-            Toast.makeText(this, "Usuário não logado!", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (usuario == null) return;
 
         Map<String, Object> dadosMes = new HashMap<>();
         dadosMes.put("name", nomeMes);
@@ -148,11 +168,10 @@ public class MainActivity extends AppCompatActivity {
                 .addOnSuccessListener(doc -> {
                     Toast.makeText(this, "Mês adicionado!", Toast.LENGTH_SHORT).show();
                     carregarMesesDoFirestore();
-                })
-                .addOnFailureListener(e -> Toast.makeText(this, "Erro ao adicionar mês.", Toast.LENGTH_SHORT).show());
+                });
     }
 
-    private void carregarMesesDoFirestore() {
+    public void carregarMesesDoFirestore() {
         if (usuario == null) return;
 
         firestore.collection("users").document(usuario.getUid()).collection("months")
@@ -179,11 +198,8 @@ public class MainActivity extends AppCompatActivity {
                     for (var t : transactions.getDocuments()) {
                         double valor = t.getDouble("valor");
                         String tipo = t.getString("tipo");
-                        if ("Ganho".equalsIgnoreCase(tipo)) {
-                            saldo += valor;
-                        } else if ("Gasto".equalsIgnoreCase(tipo)) {
-                            saldo -= valor;
-                        }
+                        if ("Ganho".equalsIgnoreCase(tipo)) saldo += valor;
+                        else if ("Gasto".equalsIgnoreCase(tipo)) saldo -= valor;
                     }
                     String saldoFormatado = (saldo >= 0 ? "+" : "-") + "R$ " + String.format("%.2f", Math.abs(saldo));
                     months.add(new MonthSummary(nomeExibicao, saldoFormatado, false));
@@ -191,114 +207,13 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
-    private void mostrarDialogoLogout() {
-        new AlertDialog.Builder(this)
-                .setTitle("Sair")
-                .setMessage("Deseja realmente sair?")
-                .setPositiveButton("Sair", (dialog, which) -> deslogarUsuario())
-                .setNegativeButton("Cancelar", null)
-                .show();
-    }
-
-    private void deslogarUsuario() {
-        FirebaseAuth.getInstance().signOut();
-        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-    }
-
-    static class MonthSummary {
+    public static class MonthSummary {
         String name, balance;
         boolean isCurrent;
         MonthSummary(String name, String balance, boolean isCurrent) {
             this.name = name;
             this.balance = balance;
             this.isCurrent = isCurrent;
-        }
-    }
-
-    // Nosso adapter já com exclusão:
-    class MonthAdapter extends RecyclerView.Adapter<MonthAdapter.MonthViewHolder> {
-        private final List<MonthSummary> months;
-        private final Context context;
-        private final FirebaseFirestore firestore;
-        private final FirebaseUser usuario;
-
-        MonthAdapter(Context context, List<MonthSummary> months) {
-            this.context = context;
-            this.months = months;
-            this.firestore = FirebaseFirestore.getInstance();
-            this.usuario = FirebaseAuth.getInstance().getCurrentUser();
-        }
-
-        @NonNull @Override
-        public MonthViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_month, parent, false);
-            return new MonthViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull MonthViewHolder holder, int position) {
-            MonthSummary m = months.get(position);
-            holder.tvCurrent.setVisibility(m.isCurrent ? View.VISIBLE : View.GONE);
-            holder.tvMonthName.setText(m.name);
-            holder.tvBalance.setText(m.balance);
-
-            holder.itemView.setOnClickListener(v -> {
-                Intent it = new Intent(context, MonthDetailActivity.class);
-                it.putExtra("EXTRA_MONTH_NAME", m.name);
-                context.startActivity(it);
-            });
-
-            holder.itemView.setOnLongClickListener(v -> {
-                mostrarDialogoExcluirMes(m.name);
-                return true;
-            });
-        }
-
-        private void mostrarDialogoExcluirMes(String nomeMes) {
-            new AlertDialog.Builder(context)
-                    .setTitle("Excluir Mês")
-                    .setMessage("Deseja realmente excluir \"" + nomeMes + "\" e todas as suas transações?")
-                    .setPositiveButton("Excluir", (dialog, which) -> excluirMesComTransacoes(nomeMes))
-                    .setNegativeButton("Cancelar", null)
-                    .show();
-        }
-
-        private void excluirMesComTransacoes(String nomeMes) {
-            if (usuario == null) return;
-
-            firestore.collection("users").document(usuario.getUid()).collection("months")
-                    .whereEqualTo("name", nomeMes).get().addOnSuccessListener(query -> {
-                        for (var doc : query.getDocuments()) {
-                            doc.getReference().delete();
-                        }
-                        firestore.collection("transactions").document(nomeMes).collection("items")
-                                .get().addOnSuccessListener(items -> {
-                                    for (var item : items.getDocuments()) {
-                                        item.getReference().delete();
-                                    }
-                                    firestore.collection("transactions").document(nomeMes)
-                                            .delete().addOnSuccessListener(aVoid -> {
-                                                Toast.makeText(context, "Mês excluído com sucesso!", Toast.LENGTH_SHORT).show();
-                                                if (context instanceof MainActivity) {
-                                                    ((MainActivity) context).carregarMesesDoFirestore();
-                                                }
-                                            });
-                                });
-                    }).addOnFailureListener(e -> Toast.makeText(context, "Erro ao excluir.", Toast.LENGTH_SHORT).show());
-        }
-
-        @Override public int getItemCount() { return months.size(); }
-
-        class MonthViewHolder extends RecyclerView.ViewHolder {
-            TextView tvCurrent, tvMonthName, tvBalance;
-            MonthViewHolder(View itemView) {
-                super(itemView);
-                tvCurrent = itemView.findViewById(R.id.tvCurrent);
-                tvMonthName = itemView.findViewById(R.id.tvMonthName);
-                tvBalance = itemView.findViewById(R.id.tvBalance);
-            }
         }
     }
 }

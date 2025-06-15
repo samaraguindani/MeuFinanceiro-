@@ -12,8 +12,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 
-import com.example.meufinanceiro.R;
-import com.example.meufinanceiro.Transaction;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -116,6 +114,33 @@ public class AddTransactionDialogFragment extends DialogFragment {
             String categoria = spinnerCategoria.getSelectedItem().toString();
             String formaPagamento = spinnerFormaPagamento.getSelectedItem().toString();
             String tipo = (radioTipo.getCheckedRadioButtonId() == R.id.rbGanho) ? "Ganho" : "Gasto";
+
+            // ------------ VALIDAÇÃO DO MÊS ---------------
+            // Pega o nome do mês da tela, desconsiderando descrição:
+            String nomeMesTela = mesSelecionado.split(" \\(")[0];  // Ex: Maio 2025
+
+            // Extrai o mês e ano da data digitada:
+            String[] partesData = data.split("/");
+
+            if (partesData.length != 3) {
+                Toast.makeText(getContext(), "Data inválida!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String mesInformado = partesData[1];  // Ex: 05
+            String anoInformado = partesData[2];  // Ex: 2025
+
+            String[] nomesMeses = {"Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"};
+
+            int mesIndex = Integer.parseInt(mesInformado) - 1;
+            String mesConvertido = nomesMeses[mesIndex] + " " + anoInformado;
+
+            if (!nomeMesTela.equals(mesConvertido)) {
+                Toast.makeText(getContext(), "A data não pertence ao mês selecionado.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            // ------------------------------------------------
 
             String id = firestore.collection("transactions").document(mesSelecionado).collection("items").document().getId();
 

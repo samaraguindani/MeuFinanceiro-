@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -256,11 +257,36 @@ public class SettingsActivity extends AppCompatActivity {
                 return true;
             }
             else if (id == R.id.nav_transactions) {
-                startActivity(new Intent(SettingsActivity.this, MonthDetailActivity.class));
+                carregarUltimoMesECriarIntent();
                 return true;
             }
-
             return false;
         });
+    }
+
+    private void carregarUltimoMesECriarIntent() {
+        FirebaseFirestore firestore = FirebaseFirestore.getInstance();
+        FirebaseUser usuario = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (usuario == null) return;
+
+        firestore.collection("users")
+                .document(usuario.getUid())
+                .collection("months")
+                .orderBy("name", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        String nomeUltimoMes = queryDocumentSnapshots.getDocuments().get(0).getString("name");
+
+                        Intent intent = new Intent(SettingsActivity.this, MonthDetailActivity.class);
+                        intent.putExtra("EXTRA_MONTH_NAME", nomeUltimoMes);
+                        startActivity(intent);
+                    } else {
+                        Toast.makeText(SettingsActivity.this, "Nenhum mês cadastrado ainda.", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "Erro ao buscar meses.", Toast.LENGTH_SHORT).show());
     }
 }
