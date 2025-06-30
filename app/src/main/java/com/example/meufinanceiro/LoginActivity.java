@@ -23,7 +23,7 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.activity_login);  // Certifique-se que esse XML exista
 
         // FirebaseAuth
         mAuth = FirebaseAuth.getInstance();
@@ -37,7 +37,7 @@ public class LoginActivity extends AppCompatActivity {
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
         // Botão de login
-        Button btnLogin = findViewById(R.id.btnLogin);
+        Button btnLogin = findViewById(R.id.btnGoogleLogin);
         btnLogin.setOnClickListener(view -> {
             Intent signInIntent = mGoogleSignInClient.getSignInIntent();
             startActivityForResult(signInIntent, RC_SIGN_IN);
@@ -74,7 +74,7 @@ public class LoginActivity extends AppCompatActivity {
 
                             // Ir para tela principal
                             Log.d("LOGIN", "Iniciando MainActivity");
-                            Intent intent = new Intent(LoginActivity.this, com.example.meufinanceiro.MainActivity.class);
+                            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                             startActivity(intent);
                             finish();
