@@ -145,6 +145,7 @@ public class AddTransactionDialogFragment extends DialogFragment {
             String id = firestore.collection("transactions").document(mesSelecionado).collection("items").document().getId();
 
             Transaction transaction = new Transaction(id, descricao, valor, data, categoria, formaPagamento, tipo);
+            transaction.setUsuarioId(userId);
 
             firestore.collection("transactions")
                     .document(mesSelecionado)

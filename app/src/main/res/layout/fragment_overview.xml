@@ -1,22 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:chart="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
 
-    <LinearLayout
-        android:orientation="vertical"
-        android:padding="16dp"
+    <TextView
+        android:id="@+id/tvResumoMes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Resumo do mês:"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvGanhos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Total Recebido: R$ 0,00" />
+
+    <TextView
+        android:id="@+id/tvGastos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Total Gasto: R$ 0,00" />
+
+    <TextView
+        android:id="@+id/tvMaiorCategoria"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Maior categoria de gasto: -" />
+
+    <com.github.mikephil.charting.charts.PieChart
+        android:id="@+id/pieChart"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="300dp"
+        android:layout_marginTop="16dp" />
 
-        <TextView
-            android:id="@+id/tvOverviewTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Overview"
-            android:textSize="18sp"
-            android:textStyle="bold"/>
+    <com.github.mikephil.charting.charts.BarChart
+        android:id="@+id/barChart"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_marginTop="16dp"
+        />
 
-        <!-- TODO: adicione aqui Total Spent, Gráfico etc -->
-    </LinearLayout>
-</ScrollView>
+</LinearLayout>

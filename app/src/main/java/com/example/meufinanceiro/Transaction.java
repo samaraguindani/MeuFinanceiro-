@@ -8,6 +8,7 @@ public class Transaction {
     private String categoria;
     private String formaPagamento;
     private String tipo; // "Ganho" ou "Gasto"
+    private String usuarioId; // ✅ novo campo
 
     public Transaction() {
         // Necessário para o Firebase
@@ -45,4 +46,12 @@ public class Transaction {
 
     public String getTipo() { return tipo; }
     public void setTipo(String tipo) { this.tipo = tipo; }
+
+    public String getUsuarioId() {
+        return usuarioId;
+    }
+
+    public void setUsuarioId(String usuarioId) {
+        this.usuarioId = usuarioId;
+    }
 }
