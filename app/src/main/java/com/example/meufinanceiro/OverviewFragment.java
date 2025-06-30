@@ -1,74 +1,65 @@
 package com.example.meufinanceiro;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.example.meufinanceiro.utils.UsuarioFirebase;
+import com.example.meufinanceiro.utils.GraficoBarrasHelper;
+import com.example.meufinanceiro.utils.GraficoPizzaHelper;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.PieChart;
-import com.github.mikephil.charting.components.Legend;
-import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.data.BarData;
-import com.github.mikephil.charting.data.BarDataSet;
-import com.github.mikephil.charting.data.BarEntry;
-import com.github.mikephil.charting.data.PieData;
-import com.github.mikephil.charting.data.PieDataSet;
-import com.github.mikephil.charting.data.PieEntry;
-import com.github.mikephil.charting.formatter.ValueFormatter;
-import com.github.mikephil.charting.utils.ColorTemplate;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class OverviewFragment extends Fragment {
 
-    private TextView tvGanhos, tvGastos, tvMaiorCategoria;
+    private static final String ARG_MONTH_NAME = "month_name";
+    private String monthName;
+
+    private TextView tvResumo, tvCategoriaDestaque;
     private PieChart pieChart;
     private BarChart barChart;
-    private FirebaseFirestore db;
 
-    private final Map<String, Double> categoriaGastos = new HashMap<>();
-    private final Map<String, Double> gastosPorDia = new TreeMap<>();
-    private double totalGanhos = 0.0;
-    private double totalGastos = 0.0;
+    private FirebaseFirestore firestore;
 
-    private String monthName; // Ex: "Maio 2025 (oi)"
+    public OverviewFragment() {}
 
     public static OverviewFragment newInstance(String monthName) {
         OverviewFragment fragment = new OverviewFragment();
         Bundle args = new Bundle();
-        args.putString("monthName", monthName);
+        args.putString(ARG_MONTH_NAME, monthName);
         fragment.setArguments(args);
         return fragment;
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        monthName = getArguments() != null ? getArguments().getString("monthName", "") : "";
+        if (getArguments() != null) {
+            monthName = getArguments().getString(ARG_MONTH_NAME);
+        }
+        firestore = FirebaseFirestore.getInstance();
     }
 
+    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_overview, container, false);
 
-        tvGanhos = view.findViewById(R.id.tvGanhos);
-        tvGastos = view.findViewById(R.id.tvGastos);
-        tvMaiorCategoria = view.findViewById(R.id.tvMaiorCategoria);
+        tvResumo = view.findViewById(R.id.tvResumoMes);
+        tvCategoriaDestaque = view.findViewById(R.id.tvCategoriaDestaque);
         pieChart = view.findViewById(R.id.pieChart);
         barChart = view.findViewById(R.id.barChart);
-
-        db = FirebaseFirestore.getInstance();
 
         carregarDados();
 
@@ -76,130 +67,75 @@ public class OverviewFragment extends Fragment {
     }
 
     private void carregarDados() {
-        String uid = UsuarioFirebase.getUidUsuario();
-        if (monthName == null || monthName.isEmpty()) return;
-
-        db.collection("transactions")
+        firestore.collection("transactions")
                 .document(monthName)
                 .collection("items")
-                .whereEqualTo("usuarioId", uid)
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    totalGanhos = 0;
-                    totalGastos = 0;
-                    categoriaGastos.clear();
-                    gastosPorDia.clear();
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Toast.makeText(getContext(), "Erro ao carregar dados.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                    if (value == null || value.isEmpty()) {
+                        tvResumo.setText("Total Recebido: R$ 0,00\nTotal Gasto: R$ 0,00");
+                        tvCategoriaDestaque.setText("Maior categoria de gasto: -");
+                        pieChart.clear();
+                        barChart.clear();
+                        return;
+                    }
+
+                    double totalGanho = 0;
+                    double totalGasto = 0;
+                    Map<String, Double> categoriaGastos = new HashMap<>();
+                    Map<String, Double> gastosPorDia = new TreeMap<>();
+
+                    for (DocumentSnapshot doc : value.getDocuments()) {
                         Transaction t = doc.toObject(Transaction.class);
+                        if (t == null) continue;
 
                         if ("Ganho".equalsIgnoreCase(t.getTipo())) {
-                            totalGanhos += t.getValor();
+                            totalGanho += t.getValor();
                         } else {
-                            totalGastos += t.getValor();
+                            totalGasto += t.getValor();
 
-                            // Categoria
-                            String cat = t.getCategoria();
-                            if (cat != null) {
-                                categoriaGastos.put(cat,
-                                        categoriaGastos.getOrDefault(cat, 0.0) + t.getValor());
-                            }
+                            // Somar por categoria
+                            categoriaGastos.put(t.getCategoria(),
+                                    categoriaGastos.getOrDefault(t.getCategoria(), 0.0) + t.getValor());
 
-                            // Dia
-                            String data = t.getData(); // formato: "07/05/2025"
-                            if (data != null && data.length() >= 2) {
-                                String dia = data.substring(0, 2);
-                                gastosPorDia.put(dia,
-                                        gastosPorDia.getOrDefault(dia, 0.0) + t.getValor());
-                            }
+                            // Somar por dia (formato simplificado: "07" por exemplo)
+                            String dia = extrairDia(t.getData());
+                            gastosPorDia.put(dia, gastosPorDia.getOrDefault(dia, 0.0) + t.getValor());
                         }
                     }
 
-                    atualizarResumo();
-                    carregarGraficoPizza();
-                    carregarGraficoBarras();
-                })
-                .addOnFailureListener(e -> {
-                    tvGanhos.setText("Erro ao carregar dados.");
-                    tvGastos.setText("");
+                    tvResumo.setText(String.format(Locale.getDefault(),
+                            "Total Recebido: R$ %.2f\nTotal Gasto: R$ %.2f", totalGanho, totalGasto));
+
+                    // Categoria destaque
+                    String maiorCategoria = "-";
+                    double maiorValor = 0;
+                    for (Map.Entry<String, Double> entry : categoriaGastos.entrySet()) {
+                        if (entry.getValue() > maiorValor) {
+                            maiorCategoria = entry.getKey();
+                            maiorValor = entry.getValue();
+                        }
+                    }
+                    tvCategoriaDestaque.setText("Maior categoria de gasto: " + maiorCategoria);
+
+                    // Gráficos
+                    GraficoPizzaHelper.configurarGrafico(pieChart, categoriaGastos);
+                    GraficoBarrasHelper.configurarGrafico(barChart, gastosPorDia);
                 });
     }
 
-    private void atualizarResumo() {
-        NumberFormat nf = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
-        tvGanhos.setText("Total Recebido: " + nf.format(totalGanhos));
-        tvGastos.setText("Total Gasto: " + nf.format(totalGastos));
-
-        if (!categoriaGastos.isEmpty()) {
-            String maiorCategoria = Collections.max(categoriaGastos.entrySet(), Map.Entry.comparingByValue()).getKey();
-            tvMaiorCategoria.setText("Maior categoria de gasto: " + maiorCategoria);
-        } else {
-            tvMaiorCategoria.setText("Maior categoria de gasto: -");
+    private String extrairDia(String data) {
+        try {
+            SimpleDateFormat formatoEntrada = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            Date date = formatoEntrada.parse(data);
+            SimpleDateFormat formatoDia = new SimpleDateFormat("dd", Locale.getDefault());
+            return formatoDia.format(date);
+        } catch (Exception e) {
+            return "?";
         }
-    }
-
-    private void carregarGraficoPizza() {
-        List<PieEntry> entries = new ArrayList<>();
-        for (Map.Entry<String, Double> entry : categoriaGastos.entrySet()) {
-            entries.add(new PieEntry(entry.getValue().floatValue(), entry.getKey()));
-        }
-
-        PieDataSet dataSet = new PieDataSet(entries, "Gastos por Categoria");
-        dataSet.setColors(ColorTemplate.MATERIAL_COLORS); // ou: new int[]{Color.rgb(...)}
-        dataSet.setValueTextColor(Color.BLACK);
-        dataSet.setValueTextSize(12f);
-
-        PieData pieData = new PieData(dataSet);
-        pieChart.setData(pieData);
-        pieChart.setUsePercentValues(true);
-        pieChart.setDrawHoleEnabled(true);
-        pieChart.setCenterText("Gastos");
-        pieChart.getDescription().setEnabled(false);
-        pieChart.getLegend().setOrientation(Legend.LegendOrientation.VERTICAL);
-        pieChart.getLegend().setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
-        pieChart.invalidate();
-    }
-
-    private void carregarGraficoBarras() {
-        List<BarEntry> entries = new ArrayList<>();
-        List<String> dias = new ArrayList<>(gastosPorDia.keySet());
-        for (int i = 0; i < dias.size(); i++) {
-            String dia = dias.get(i);
-            double valor = gastosPorDia.get(dia);
-            entries.add(new BarEntry(i, (float) valor));
-        }
-
-        BarDataSet dataSet = new BarDataSet(entries, "Gastos por Dia");
-        dataSet.setColors(new int[]{
-                Color.rgb(150, 123, 182),
-                Color.rgb(173, 130, 200),
-                Color.rgb(192, 145, 210),
-                Color.rgb(210, 160, 230),
-                Color.rgb(230, 180, 250)
-        });
-        dataSet.setValueTextColor(Color.BLACK);
-        dataSet.setValueTextSize(10f);
-
-        BarData barData = new BarData(dataSet);
-        barData.setBarWidth(0.9f);
-
-        barChart.setData(barData);
-        barChart.setFitBars(true);
-        barChart.getDescription().setEnabled(false);
-        barChart.getLegend().setEnabled(false);
-
-        XAxis xAxis = barChart.getXAxis();
-        xAxis.setGranularity(1f);
-        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setDrawGridLines(false);
-        xAxis.setValueFormatter(new ValueFormatter() {
-            @Override
-            public String getFormattedValue(float value) {
-                int i = (int) value;
-                return (i >= 0 && i < dias.size()) ? dias.get(i) : "";
-            }
-        });
-
-        barChart.invalidate();
     }
 }
